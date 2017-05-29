@@ -31,7 +31,7 @@ def createBoard():
         line1.draw(win)
         line2.draw(win) 
 
-# Check if duplicate bomb
+# Check if bomb
 def checkBomb(loc):
     for b in bombs:
         if b.x == loc.x and b.y == loc.y:
@@ -39,6 +39,7 @@ def checkBomb(loc):
 
     return 0
 
+# Outputs the current state of the board
 def outputBoard():
 	for i in range(len(board)):
 		for j in range(len(board)):
@@ -53,15 +54,16 @@ def displayBombs():
 	board[int(bomb.x)][int(bomb.y)] = -1
 			
 # Creates bombs
-def createBombs():
+def createBombs(loc):
     numBombs = 10
     global bombs
+    bombs = []
     for i in range(numBombs):
             temp = None
             # Loops new locations until new bomb location is created
             while temp == None:
                 temp = Point(randint(0, 9), randint(0, 9))
-                if not checkBomb(temp):
+                if not checkBomb(temp) and not (temp.x == loc.x and temp.y == loc.y):
                     bombs.append(temp)
                     #print 'Bomb created at (' + str(temp.x) + ', ' + str(temp.y) + ')'
                     continue
@@ -143,8 +145,11 @@ def loop():
         mouseLoc = win.getMouse()
         loc = cellLoc(mouseLoc)
         
-        #
+        
         if loc.x != -1 and loc.y != -1:
+	    # Creates bombs after first click
+	    if len(bombs) == 0:
+	    	createBombs(loc)
             cellType = checkCell(loc)
             if cellType == -1:
                 exploded = True
@@ -153,17 +158,12 @@ def loop():
             else:
                 floodFill(loc, [])
             
-            
-        
-
-
 def main():
     global win
     win = GraphWin('Minesweeper', 210, 260)
     
     createTextArea()    
     createBoard()
-    createBombs()
     loop()
     outputBoard() 
     win.getMouse()
