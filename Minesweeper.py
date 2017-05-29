@@ -1,4 +1,5 @@
-from __future__ import division
+from __future__ import division, print_function
+#from __future__ import print_function
 from graphics import *
 from random import randint
 
@@ -7,6 +8,7 @@ win = None
 score = 10
 exploded = False
 bombs = []
+board = []
 dx = [-1, -1, -1, 0, 0, 1, 1, 1]
 dy = [-1, 0, 1, 1, -1, -1, 0, 1]
 
@@ -16,6 +18,10 @@ lowerRight = Point(205, 255)
 
 # Creates game board
 def createBoard():
+    # Creates player board
+    global board
+    board = [[-2 for x in range(10)] for y in range(10)]
+
     border = Rectangle(topLeft, lowerRight)
     border.draw(win)
 
@@ -33,12 +39,19 @@ def checkBomb(loc):
 
     return 0
 
+def outputBoard():
+	for i in range(len(board)):
+		for j in range(len(board)):
+			print(str(board[int(j)][int(i)]) + ' ', end="\t")
+		print("", end="\n")
+
 def displayBombs():
     for bomb in bombs:
         circle = Circle(Point(topLeft.x + bomb.x*20 + 10, topLeft.y + bomb.y*20 + 10), 5)
         circle.setFill('grey')
         circle.draw(win)
-
+	board[int(bomb.x)][int(bomb.y)] = -1
+			
 # Creates bombs
 def createBombs():
     numBombs = 10
@@ -50,7 +63,7 @@ def createBombs():
                 temp = Point(randint(0, 9), randint(0, 9))
                 if not checkBomb(temp):
                     bombs.append(temp)
-                    print 'Bomb created at (' + str(temp.x) + ', ' + str(temp.y) + ')'
+                    #print 'Bomb created at (' + str(temp.x) + ', ' + str(temp.y) + ')'
                     continue
                 temp = None
                 
@@ -81,7 +94,7 @@ def cellLoc(loc):
     cellX = x//20
     cellY = y//20
     
-    print 'Checking cell (' + str(cellX) + ', ' + str(cellY) + ')'
+    #print 'Checking cell (' + str(cellX) + ', ' + str(cellY) + ')'
     return Point(cellX, cellY)
 
 def adjacentBombs(cellLoc):
@@ -109,9 +122,11 @@ def floodFill(cellLoc, checked):
     if adj == 0:
         showValue(cellLoc, adj)
         checked.append(cellLoc)
+	board[int(cellLoc.x)][int(cellLoc.y)] = 0
         for i in range(len(dx)):
             floodFill(Point(cellLoc.x + dx[i], cellLoc.y + dy[i]), checked)
     if adj > 0:
+	board[int(cellLoc.x)][int(cellLoc.y)] = adj
         checked.append(cellLoc)
         showValue(cellLoc, adj)
 
@@ -134,7 +149,7 @@ def loop():
             if cellType == -1:
                 exploded = True
                 displayBombs()
-                print 'exploded: ' + str(exploded)
+                print('exploded: ' + str(exploded), end='\n')
             else:
                 floodFill(loc, [])
             
@@ -150,7 +165,7 @@ def main():
     createBoard()
     createBombs()
     loop()
-
+    outputBoard() 
     win.getMouse()
     win.close()
 
