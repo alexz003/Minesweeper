@@ -68,7 +68,8 @@ def printBoard():
 
 	for i in range(N):
 		for j in range(N):
-			print str(board[i, j]),
+			loc = (j, i)
+			print("%2d" % (board[loc])),
 		print ""
 
 # Gets the number of adjacent bombs at a location
@@ -76,8 +77,8 @@ def getAdjacentBombs(loc):
 	global dx
 	count = 0
 	for i in range(len(dx)):
-		loc = tuple(loc + dx[i])
-		if checkBomb(loc):
+		newLoc = tuple(loc + dx[i])
+		if checkBomb(newLoc):
 			count += 1
 	return count
 
