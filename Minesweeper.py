@@ -1,172 +1,179 @@
-from __future__ import division, print_function
-#from __future__ import print_function
-from graphics import *
+import numpy as np
 from random import randint
 
+# Sets size of board
+N = 20
+board = None
 
-win = None
-score = 10
-exploded = False
-bombs = []
-board = []
-dx = [-1, -1, -1, 0, 0, 1, 1, 1]
-dy = [-1, 0, 1, 1, -1, -1, 0, 1]
+# Bombs
+bombCount = 15
+bombs = None
 
-topLeft = Point(5, 55)
-lowerRight = Point(205, 255)
+# Game Data
+gameStarted = False
+
+# Flood fill data
+dx = np.array([(-1, -1), (-1, 0), (-1, 1), (0, 1), (0, -1), (1, -1), (1, 0), (1, 1)], dtype=tuple)
 
 
-# Creates game board
+# Creates NxN board
+# Values:
+#	-2 = bomb
+#	-1 = unvisited
+#	 x = number of adjacent bombs
+#
 def createBoard():
-    # Creates player board
-    global board
-    board = [[-2 for x in range(10)] for y in range(10)]
+	# Create an empty NxN board
+	temp = np.zeros([N, N], dtype=np.int32)
+	temp.fill(-1)
+	return temp
 
-    border = Rectangle(topLeft, lowerRight)
-    border.draw(win)
-
-    for val in range(10):
-        line1 = Line(Point(topLeft.x + val*20, topLeft.y), Point(topLeft.x + val*20, lowerRight.y))
-        line2 = Line(Point(topLeft.x, topLeft.y + val*20), Point(lowerRight.x, topLeft.y + val*20))
-        line1.draw(win)
-        line2.draw(win) 
-
-# Check if bomb
+# Check if a bomb is in this location
 def checkBomb(loc):
-    for b in bombs:
-        if b.x == loc.x and b.y == loc.y:
-            return 1
+	global bombs
 
-    return 0
+	for i in range(len(bombs)):
+		if bombs[i] == loc:
+			return True
+	return False
 
-# Outputs the current state of the board
-def outputBoard():
-	for i in range(len(board)):
-		for j in range(len(board)):
-			print(str(board[int(j)][int(i)]) + ' ', end="\t")
-		print("", end="\n")
+# Creates a single bomb, avoids duplicates
+def createBomb(loc):
 
-def displayBombs():
-    for bomb in bombs:
-        circle = Circle(Point(topLeft.x + bomb.x*20 + 10, topLeft.y + bomb.y*20 + 10), 5)
-        circle.setFill('grey')
-        circle.draw(win)
-	board[int(bomb.x)][int(bomb.y)] = -1
-			
-# Creates bombs
+	# Create a location tuple for the location of the bomb
+	temp = (randint(0, N-1), randint(0, N-1))
+	
+	# Recreate bomb if location is not unique
+	# Avoids first choice by loc being (-1, -1) when not first
+	while checkBomb(temp) or temp == loc:
+		temp = (randint(0, N-1), randint(0, N-1))
+	
+	return temp;
+	
+# Create list of bombs, avoiding first location and duplicates
 def createBombs(loc):
-    numBombs = 10
-    global bombs
-    bombs = []
-    for i in range(numBombs):
-            temp = None
-            # Loops new locations until new bomb location is created
-            while temp == None:
-                temp = Point(randint(0, 9), randint(0, 9))
-                if not checkBomb(temp) and not (temp.x == loc.x and temp.y == loc.y):
-                    bombs.append(temp)
-                    #print 'Bomb created at (' + str(temp.x) + ', ' + str(temp.y) + ')'
-                    continue
-                temp = None
-                
-def showValue(cellLoc, value):
-    loc = Point(topLeft.x + cellLoc.x*20 + 10, topLeft.y + cellLoc.y*20 + 10)
-    text = Text(loc, str(value))
-    text.draw(win)
+	global bombs
 
-# Creates the text area
-def createTextArea():
-    topLeft = Point(30, 10)
-    text = Text(topLeft, 'Score: ' + str(10 - score))
-    text.draw(win)
+	if bombs == None:
+		bombs = np.empty([bombCount], dtype=tuple)
+		bombs.fill((-1, -1))
 
-# Checks if game is finished
-def gameFinished():
-    return score == 0 or exploded == True
+	# Creates bombs and adds to bomb-list
+	for i in range(bombCount):
+		bombs[i] = createBomb(loc)
 
-# Gets the x and y value of the cell selected within the grid
-def cellLoc(loc):
-    # Area clicked not within grid
-    if loc.x < 5 or loc.x > 205 or loc.y < 55 or loc.y > 255:
-        return Point(-1, -1)
-    
-    x = loc.x - 5
-    y = loc.y - 55
+# Prints out the current state of the board
+def printBoard():
+	global board
 
-    cellX = x//20
-    cellY = y//20
-    
-    #print 'Checking cell (' + str(cellX) + ', ' + str(cellY) + ')'
-    return Point(cellX, cellY)
+	for i in range(N):
+		for j in range(N):
+			print str(board[i, j]),
+		print ""
 
-def adjacentBombs(cellLoc):
-    sum = 0    
-    for i in range(len(dx)):
-        if checkBomb(Point(cellLoc.x + dx[i], cellLoc.y + dy[i])):
-            sum += 1
+# Gets the number of adjacent bombs at a location
+def getAdjacentBombs(loc):
+	global dx
+	count = 0
+	for i in range(len(dx)):
+		loc = tuple(loc + dx[i])
+		if checkBomb(loc):
+			count += 1
+	return count
 
-    return sum
+# Flood fill the values of adjacent bombs
+def floodFill(loc):
+	global board
 
-# Fills in 0's for all adjacent zeros            
-def floodFill(cellLoc, checked):
+	# Check out of bounds
+	if loc[0] < 0 or loc[0] >= N or loc[1] < 0 or loc[1] >= N:
+		return
 
-    #print 'Checking location (' + str(cellLoc.x) + ', ' + str(cellLoc.y) + ')'
-    for check in checked:
-        if check.x == cellLoc.x and check.y == cellLoc.y:
-            return
+	# Check for bombs
+	if checkBomb(loc):
+		return 
 
-    if cellLoc.x < 0 or cellLoc.x > 9 or cellLoc.y < 0 or cellLoc.y > 9:
-        return
+	# Unvisited location
+	if board[loc] == -1:
+		# Change board value to number of adjacent bombs
+		board[loc] = getAdjacentBombs(loc)
+		if board[loc] == 0:
+			# If no adjacent bombs, flood fill
+			for i in range(len(dx)):
+				floodFill(tuple(loc + dx[i]))
 
-    adj = adjacentBombs(cellLoc)
-    if adj == -1:
-        return
-    if adj == 0:
-        showValue(cellLoc, adj)
-        checked.append(cellLoc)
-	board[int(cellLoc.x)][int(cellLoc.y)] = 0
-        for i in range(len(dx)):
-            floodFill(Point(cellLoc.x + dx[i], cellLoc.y + dy[i]), checked)
-    if adj > 0:
-	board[int(cellLoc.x)][int(cellLoc.y)] = adj
-        checked.append(cellLoc)
-        showValue(cellLoc, adj)
+# Choose a location
+def chooseLocation(loc):
+	global gameStarted
+ 
+	# Creates bombs after game has started
+	if not gameStarted:
+		createBombs(loc)
+		gameStarted = True
 
-# Checks the cell for bomb(-1) or number of adjacent bombs
-def checkCell(cellLoc):
-        if checkBomb(cellLoc):
-            return -1
-        return adjacentBombs(cellLoc)
+	# If a bomb is here, show it	
+	if checkBomb(loc):
+		board[loc] = -2
+		return
 
-# Main loop that runs the game
-def loop():
-    global exploded
-    while not exploded:
-        mouseLoc = win.getMouse()
-        loc = cellLoc(mouseLoc)
-        
-        
-        if loc.x != -1 and loc.y != -1:
-	    # Creates bombs after first click
-	    if len(bombs) == 0:
-	    	createBombs(loc)
-            cellType = checkCell(loc)
-            if cellType == -1:
-                exploded = True
-                displayBombs()
-                print('exploded: ' + str(exploded), end='\n')
-            else:
-                floodFill(loc, [])
-            
+	# Flood fill from location
+	floodFill(loc)
+
+# Returns the status of the game:
+# 	-1: Loss
+#	 0: Running
+#	 1: Win
+def gameStatus():
+	global board
+	count = 0
+	
+	for i in range(N):
+		for j in range(N):
+			# Bomb found
+			if board[i,j] == -2:
+				return -1
+
+			# Unvisited location
+			if board[i,j] == -1:
+				count += 1
+
+	# Check if the only empty spots left are bombs
+	if count == len(bombs):
+		return 1
+	
+	# Game still in progress
+	return 0
+
+
+# Main game loop, while the game is still running
+def loop():	
+	# Start game with a random first location
+	loc = (randint(0, N-1), randint(0, N-1))
+	chooseLocation(loc)
+	printBoard()
+
+	# Get next location
+	# TODO: Change to take the output from learning model
+	status = 0
+	while status == 0:
+		x = raw_input("x: ")
+		y = raw_input("y: ")
+		loc = (int(x), int(y))
+		chooseLocation(loc)
+		printBoard()
+		status = gameStatus()
+	
+	return status
+
 def main():
-    global win
-    win = GraphWin('Minesweeper', 210, 260)
-    
-    createTextArea()    
-    createBoard()
-    loop()
-    outputBoard() 
-    win.getMouse()
-    win.close()
+	global board
+
+	board = createBoard()
+	status = loop()
+	if status == -1:
+		print "Sorry you lose."
+	else:
+		print "You won!"
+
 
 main()
