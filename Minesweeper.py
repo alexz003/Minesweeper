@@ -18,12 +18,12 @@ class Minesweeper(object):
 	dx = np.array([(-1, -1), (-1, 0), (-1, 1), (0, 1), (0, -1), (1, -1), (1, 0), (1, 1)], dtype=tuple)
 	
 	def __init__(self):
-		N = 20
-		board = None
-		bombCount = 15
-		bombs = None
-		gameStarted = False	
-		dx = np.array([(-1, -1), (-1, 0), (-1, 1), (0, 1), (0, -1), (1, -1), (1, 0), (1, 1)], dtype=tuple)
+		self.N = 20
+		self.board = None
+		self.bombCount = 15
+		self.bombs = None
+		self.gameStarted = False	
+		self.dx = np.array([(-1, -1), (-1, 0), (-1, 1), (0, 1), (0, -1), (1, -1), (1, 0), (1, 1)], dtype=tuple)
 	
 	def startGame(self):
 
@@ -34,11 +34,11 @@ class Minesweeper(object):
 		else:
 			print "You won!."
 
-	# Creates self.Nxself.N self.board
+	# Creates NxN board
 	# Values:
 	#	-2 = bomb
 	#	-1 = unvisited
-	#	 x = number of adjacent self.bombs
+	#	 x = number of adjacent bombs
 	#
 	def createboard(self):
 		# Create an empty self.Nxself.N self.board
@@ -67,18 +67,18 @@ class Minesweeper(object):
 		
 		return temp;
 		
-	# Create list of self.bombs, avoiding first location and duplicates
+	# Create list of bombs, avoiding first location and duplicates
 	def createbombs(self, loc):
 
 		if self.bombs == None:
 			self.bombs = np.empty([self.bombCount], dtype=tuple)
 			self.bombs.fill((-1, -1))
 
-		# Creates self.bombs and adds to bomb-list
+		# Creates bombs and adds to bomb-list
 		for i in range(self.bombCount):
 			self.bombs[i] = self.createBomb(loc)
 
-	# Prints out the current state of the self.board
+	# Prints out the current state of the board
 	def printBoard(self):
 		
 		for i in range(self.N):
@@ -87,7 +87,7 @@ class Minesweeper(object):
 				print("%2d" % (self.board[loc])),
 			print ""
 
-	# Gets the number of adjacent self.bombs at a location
+	# Gets the number of adjacent bombs at a location
 	def getAdjacentbombs(self, loc):
 		count = 0
 		for i in range(len(self.dx)):
@@ -96,7 +96,7 @@ class Minesweeper(object):
 				count += 1
 		return count
 
-	# Flood fill the values of adjacent self.bombs
+	# Flood fill the values of adjacent bombs
 	def floodFill(self, loc):
 
 		# Check out of bounds
@@ -109,17 +109,17 @@ class Minesweeper(object):
 
 		# Unvisited location
 		if self.board[loc] == -1:
-			# Change self.board value to number of adjacent self.bombs
+			# Change board value to number of adjacent bombs
 			self.board[loc] = self.getAdjacentbombs(loc)
 			if self.board[loc] == 0:
-				# If no adjacent self.bombs, flood fill
+				# If no adjacent bombs, flood fill
 				for i in range(len(self.dx)):
 					self.floodFill(tuple(loc + self.dx[i]))
 
 	# Choose a location
 	def chooseLocation(self, loc):
 	 
-		# Creates self.bombs after game has started
+		# Creates bombs after game has started
 		if not self.gameStarted:
 			self.createbombs(loc)
 			self.gameStarted = True
@@ -156,6 +156,9 @@ class Minesweeper(object):
 		# Game still in progress
 		return 0
 
+	# Returns the current board
+	def getBoard(self):
+		return self.board
 
 	# Main game loop, while the game is still running
 	def loop(self):	
