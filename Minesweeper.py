@@ -160,22 +160,16 @@ class Minesweeper(object):
 	def getBoard(self):
 		return self.board
 
-	# Main game loop, while the game is still running
-	def loop(self):	
-		# Start game with a random first location
+	# Start game with random first location
+	def start_game():
 		loc = (randint(0, self.N-1), randint(0, self.N-1))
 		self.chooseLocation(loc)
 		self.printBoard()
 
-		# Get next location
-		# TODO: Change to take the output from learning model
-		status = 0
-		while status == 0:
-			x = raw_input("x: ")
-			y = raw_input("y: ")
-			loc = (int(x), int(y))
-			self.chooseLocation(loc)
-			self.printBoard()
-			self.status = self.gameStatus()
-		
-		return status
+	# Send a move to the game
+	def send_move(x, y):	
+		loc = (x, y)
+		self.chooseLocation(loc)
+		self.printBoad()
+		self.status = self.gameStatus()
+
