@@ -27,9 +27,10 @@ class NeuralNetwork():
 	# Run a single trial of Neural Network
 	def run_trial(game, inputs, weights):
 
-		# Make new game if old or non-eistatnt
+		# Make new game if not created or not running
 		if game == None or not game.getStatus() == 0:
-			game = Minesweeper.Minesweeper()	
+			game = Minesweeper.Minesweeper()
+			game.start_game()	
 	
 		# Train this test case	
 		weights = train(game, weights)	 
@@ -86,7 +87,19 @@ class NeuralNetwork():
 		# Feed forward for output values
 		outputs, net_inputs = test(game, board.flatten(), weights)
 
-		# TODO(Alex): Send best output to game as selection
+		# Get the best output index
+		index = 0
+		for i in range(outputs.shape[1]):
+			if outputs[outputs.shape[0]-1, i] > outputs[outputs.shape[0]-1, index]:
+				index = i;
+
+		# Gets location of move based on inputs
+		x = math.floor(i/game.N)
+		y = i % game.N
+
+		# Sends move to the game and retrieves new board state
+		game.send_move(x, y)
+		new_board = game.getBoard().flatten()
 
 		# Set up vector of expected values
 		expected_values = np.zeros(len(weights), dtype = float)
@@ -103,10 +116,12 @@ class NeuralNetwork():
 		# Get new weights after backpropagating
 		new_weights = backpropagate(inputs, weights, outputs, expected_values)
 
+		# Calculate weight differences
 		old_error = calc_total_error(expected_values, outputs)
 		new_outputs = test(game, new_weights)
 		new_error = calc_total_error(expected_values, new_outputs)
 
+		# New error should always be lower than the old error
 		if new_error > old_error:
 			print 'You fucked up somewhere...\n'
 
