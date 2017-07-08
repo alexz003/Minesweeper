@@ -8,7 +8,7 @@ class Minesweeper(object):
 	board = None
 
 	# Bombs
-	bombCount = 15
+	bombCount = 30
 	bombs = None
 
 	# Game Data
@@ -20,19 +20,18 @@ class Minesweeper(object):
 	def __init__(self):
 		self.N = 20
 		self.board = None
-		self.bombCount = 15
+		self.bombCount = 30
 		self.bombs = None
 		self.gameStarted = False	
 		self.dx = np.array([(-1, -1), (-1, 0), (-1, 1), (0, 1), (0, -1), (1, -1), (1, 0), (1, 1)], dtype=tuple)
 	
-	def startGame(self):
+	def start_game(self):
 
 		self.board = self.createboard()
-		status = self.loop()
-		if status == -1:
-			print "Sorry you lose."
-		else:
-			print "You won!."
+		loc = (randint(0, self.N-1), randint(0, self.N-1))
+		self.chooseLocation(loc)
+		self.printBoard()
+
 
 	# Creates NxN board
 	# Values:
@@ -118,7 +117,7 @@ class Minesweeper(object):
 
 	# Choose a location
 	def chooseLocation(self, loc):
-	 
+		print loc 
 		# Creates bombs after game has started
 		if not self.gameStarted:
 			self.createbombs(loc)
@@ -138,7 +137,6 @@ class Minesweeper(object):
 	#	 1: Win
 	def gameStatus(self):
 		count = 0
-		
 		for i in range(self.N):
 			for j in range(self.N):
 				# Bomb found
@@ -160,16 +158,10 @@ class Minesweeper(object):
 	def getBoard(self):
 		return self.board
 
-	# Start game with random first location
-	def start_game():
-		loc = (randint(0, self.N-1), randint(0, self.N-1))
-		self.chooseLocation(loc)
-		self.printBoard()
-
 	# Send a move to the game
-	def send_move(x, y):	
+	def send_move(self, x, y):	
 		loc = (x, y)
 		self.chooseLocation(loc)
-		self.printBoad()
+#		self.printBoard()
 		self.status = self.gameStatus()
 
